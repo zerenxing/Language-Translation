@@ -1,29 +1,4 @@
 
-# coding: utf-8
-
-# In[30]:
-
-import numpy as np
-np.outer([1,2,3],[4,5])
-h = np.zeros((5 + 1, 3))
-#h[-1] = np.zeros(3)
-h[0].shape
-np.random.seed(3)
-We = np.random.uniform(-np.sqrt(1./5), np.sqrt(1./5), (2, 5))
-Ue = np.random.uniform(-np.sqrt(1./2), np.sqrt(1./2), (2, 2))
-
-s=[We[:,3]+np.dot(Ue,np.arange(2))]
-#s.append(We[:,4]+np.dot(Ue,np.arange(1,3)))
-#np.asarray(s)
-s
-np.tanh(s[0])
-a=[1]
-a.append(2)
-np.asarray(a)
-
-
-# In[ ]:
-
 class VanillaRnn(object):
     
     def __init__(self, source_dim, target_dim, hidden_dim, bptt_truncate=5):
@@ -121,8 +96,8 @@ class VanillaRnn(object):
             delta_s_t = np.dot(self.Ud.T, delta_s_t) * activation_prime(s[bptt_step-1])
         delta_c_t = dLdc*activation_prime(c)
         for bptt_step in np.arange(max(0, Tenc-self.bptt_truncate), Tenc)[::-1]:
-            dcdWe[:,x[step]] += delta_c_t
-            dcdUe += np.outer(delta_c_t,h[step-1])
+            dLdWe[:,x[step]] += delta_c_t
+            dLdUe += np.outer(delta_c_t,h[step-1])
             # Update delta for next step dL/dz in the decoder at t-1
             delta_c_t = np.dot(self.Ue.T, delta_c_t) * activation_prime(h[bptt_step-1]) 
         
