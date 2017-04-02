@@ -54,7 +54,7 @@ class Network(object):
 
         for layer in xrange(2, self.num_layers):
             net_layer = Nets[-layer]
-            activation_layer =  derivative_sigmoid_wrt_Net(net_layer)
+            activation_layer = derivative_sigmoid_wrt_Net(net_layer)
             delta = np.dot(self.weights[-layer+1].transpose(), delta) * activation_layer
             nabla_b[-layer] = delta
             nabla_w[-layer] = np.dot(delta, activations[-layer-1].transpose())
@@ -149,4 +149,8 @@ def sigmoid(net):
 
 def derivative_sigmoid_wrt_Net(a):
     return sigmoid(a) * (1 - sigmoid(a))
+
+
+
+
 
