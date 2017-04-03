@@ -19,11 +19,16 @@ sentence_end_token = "SENTENCE_END"
 def getData(file):
     # Read the data and append SENTENCE_START and SENTENCE_END tokens
     print "Reading CSV file..."
+    sentences = []
     with open(file, 'rb') as f:
         reader = csv.reader(f, skipinitialspace=True)
         reader.next()
         # Split full comments into sentences
-        sentences = itertools.chain(*[nltk.sent_tokenize(x[0].decode('utf-8').lower()) for x in reader])
+        #sentences = itertools.chain(*[nltk.sent_tokenize(x[0].decode('utf-8').lower()) for x in reader])
+        for x in reader:
+            if len(x) > 0:
+                c = x[0].decode('utf-8').lower()
+                sentences.append(c)
         # Append SENTENCE_START and SENTENCE_END
         sentences = ["%s %s" % (x, sentence_end_token) for x in sentences]
     print "Parsed %d sentences." % (len(sentences))
@@ -57,38 +62,29 @@ def getData(file):
     return training_data
 
 
-def shrink_file(no_of_lines=5000):
+def shrink_file(no_of_lines=5000, input=None, output=None):
     i = 0
-    with open("train_x_en.txt") as f:
-        with open("train_x_en_small.txt", "w") as f1:
+    with open(input) as f:
+        with open(output, "w") as f1:
             for line in f:
                 if i < no_of_lines:
-                    f1.write(line)
+                    f1.write(line.replace(","," "))
                     i += 1
                 else:
                     return
-
-
-    i = 0
-    with open("train_x_de.txt") as f:
-        with open("train_x_de_small.txt", "w") as f1:
-            for line in f:
-                if i < no_of_lines:
-                    f1.write(line)
-                    i += 1
-                else:
-                    return
-
 
 
 def get_training_set():
 
-    train_file_en = 'train_x_en_small.txt'
+    train_file_en = 'europarl-en-small'
     train_X = getData(train_file_en)
 
-    train_file_de = 'train_x_de_small.txt'
-    train_Y = getData(train_file_de)
+    #train_file_de = 'train_x_de_small.txt'
+    #train_Y = getData(train_file_de)
 
     print ('Done tokenization!')
 
 get_training_set()
+
+
+#shrink_file(5000, 'europarl-v7.de-en.en', 'europarl-en-small')
