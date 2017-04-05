@@ -1,6 +1,9 @@
 import numpy as np
 from test import *
-
+from datetime import datetime
+import sys
+import os
+import time
 
 class VanillaRnn(object):
     
@@ -44,7 +47,7 @@ class VanillaRnn(object):
         # For each time step...
         for t in np.arange(Tenc):
             # Note that we are indexing W by x[t]. This is the same as multiplying U with a one-hot vector.
-            h[t] = activation(self.We[:,x[t]] + np.dot(self.Ue,h[t-1]))
+            h[t] = activation(self.We[:, x[t]] + np.dot(self.Ue, h[t-1]))
         return h
 
     def decoder(self, x, c, y=None):
@@ -67,23 +70,31 @@ class VanillaRnn(object):
         else:
             # Start translation without previous word presented
             s = [activation(np.dot(self.V, c))]
-            o = [softmax(np.dot(self.P, s))]
+            o = [softmax(np.dot(self.P, s[0]))]
             y = [np.argmax(o)]
             t = 1
             # Keep translation till the ending sign is reached
-            while (y[-1] != sentence_end_token):
+            while y[-1] != word2vec_target[sentence_end_token] and len(y)<30 :
                 s.append(activation(self.Wd[:, y[t - 1]] + np.dot(self.Ud, s[t - 1]) + np.dot(self.V, c)))
                 o.append(softmax(np.dot(self.P, s[t])))
-                y.append(np.argmax(o[t]))
+                trial = word2vec_target[unknown_token]
+                while(trial == word2vec_target[unknown_token]):
+                    samples = np.random.multinomial(1, o[t])
+                    trial = np.argmax(samples)
+                y.append(trial)
                 t = t + 1
             y = np.asarray(y)
             o = np.asarray(o)
             s = np.asarray(s)
         return [s, o, y]
 
-    def translate(self,x):
-        h = self.encoder(x)
-        s,o,y = self.decoder(x,h[-1])
+    def translate(self, x):
+        target_corpus=[]
+        for i in range(len(x)):
+            h = self.encoder(x[i])
+            s, o, y = self.decoder(x[i], h[-1])
+            target_corpus.append([vec2word_target[w] for w in y[:-1]])
+        return target_corpus
 
     def bptt(self, x, y):
         Tenc = len(x)
@@ -138,14 +149,14 @@ class VanillaRnn(object):
         self.V -= eta* dLdV
         self.P -= eta* dLdP
 
-    def train_with_sgd(model, X_train, y_train, learning_rate=0.005, nepoch=10, evaluate_loss_after=1):
+    def train_with_sgd(model, x, y, learning_rate=0.005, nepoch=10, evaluate_loss_after=1):
         # We keep track of the losses so we can plot them later
         losses = []
         num_examples_seen = 0
         for epoch in range(nepoch):
             # Optionally evaluate the loss
             if (epoch % evaluate_loss_after == 0):
-                loss = model.total_loss(X_train, y_train)
+                loss = model.total_loss(x,y)
                 losses.append((num_examples_seen, loss))
                 time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 print '%s: Loss after num_examples_seen=%d epoch=%d: %f' % (time, num_examples_seen, epoch, loss)
@@ -155,9 +166,9 @@ class VanillaRnn(object):
                     print "Setting learning rate to %f" % learning_rate
                 sys.stdout.flush()
             # For each training example...
-            for i in range(len(y_train)):
+            for i in range(len(y)):
                 # One SGD step
-                model.SGD(X_train[i], y_train[i], learning_rate)
+                model.SGD(x[i], y[i], learning_rate)
                 num_examples_seen += 1
         return losses
 
@@ -172,3 +183,12 @@ def softmax(x):
     e_x = np.exp(x - np.max(x))
     return e_x / e_x.sum()
 
+train_X, word2vec_resource, vec2word_resource = getData('europarl-en-small')
+train_Y, word2vec_target, vec2word_target = getData('europarl-de-small')
+model1 = VanillaRnn(vocabulary_size,vocabulary_size,100)
+model1.train_with_sgd(train_X[:50],train_Y[:50])
+trial1 = model1.translate(train_X[50:52])
+for i in range(len(trial1)):
+    print " ".join([vec2word_resource[x] for x in train_X[50+i][:-1]])
+    print " ".join(trial1[i])
+    print " ".join([vec2word_target[x] for x in train_Y[50+i][:-1]])
