@@ -31,7 +31,9 @@ def getData(file):
                 c = x[0].decode('utf-8').lower()
                 sentences.append(c)
         # Append SENTENCE_START and SENTENCE_END
+
         sentences = ["%s %s" % (x, sentence_end_token) for x in sentences]
+
     print "Parsed %d sentences." % (len(sentences))
 
     # Tokenize the sentences into words
@@ -87,4 +89,4 @@ def get_training_set():
     return [train_X, train_Y]
 
 
-#shrink_file(5000, 'europarl-v7.de-en.en', 'europarl-en-small')
+
